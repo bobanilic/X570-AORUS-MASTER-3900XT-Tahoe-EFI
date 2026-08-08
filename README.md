@@ -1,136 +1,188 @@
 # X570 AORUS MASTER + Ryzen 9 3900XT — macOS Tahoe EFI
 
-A tested OpenCore EFI for a Gigabyte X570 AORUS MASTER, Ryzen 9 3900XT, Radeon RX 580, NVIDIA RTX 3080 and Intel AX200. The default `config.plist` uses the native macOS Wi-Fi interface through AirportItlwm and the Tahoe Modern Wireless root patch.
+Final tested OpenCore EFI for the Gigabyte X570 AORUS MASTER + Ryzen 9 3900XT platform. macOS uses a Radeon RX 580 while an RTX 3080 remains installed for Windows and is disabled only in macOS.
 
 > [!CAUTION]
-> This is a hardware-specific reference, not a universal EFI. Generate your own SMBIOS values before booting it. Test from a USB drive first and keep a known-good EFI backup.
+> This EFI is hardware-specific. The public configuration is deliberately sanitized. Generate your own MacPro7,1 SMBIOS identifiers before booting, test from removable media first, and keep a known-good EFI backup.
 
-## Tested hardware
+## Final tested state
+
+- **macOS:** Tahoe 26.6.1, build `25G76`
+- **SMBIOS:** `MacPro7,1`
+- **CPU:** Ryzen 9 3900XT — 12 cores / 24 threads confirmed
+- **macOS GPU:** Radeon RX 580 8 GB — Ellesmere acceleration and Metal confirmed
+- **Windows GPU:** RTX 3080 retained physically and disabled in macOS by PCI device property
+- **Wi-Fi / Bluetooth:** Intel AX200
+- **Ethernet:** Realtek RTL8125 using `RTL812xLucy.kext`; 1 Gbps link confirmed with a good cable
+- **Audio:** Realtek ALC1220 with AppleALC layout 5 plus OCLP Modern Audio root patch
+- **USB:** USBToolBox + custom `UTBMap.kext`; H500M front USB-C detects and communicates with iPhone correctly
+- **Apple services:** iCloud, iMessage, FaceTime and APNs/IDS registration working
+
+The final private/live `config.plist` used for validation had SHA-256:
+
+```text
+1d7ed6b367fb4d4a2075042f288ec8159c11c3c76ee363deddc0f8c70f7e8767
+```
+
+The repository copy is sanitized, so its hash is intentionally different.
+
+## Hardware
 
 | Component | Configuration |
 |---|---|
 | Motherboard | Gigabyte X570 AORUS MASTER |
-| CPU | AMD Ryzen 9 3900XT, 12 cores / 24 threads |
+| CPU | AMD Ryzen 9 3900XT, 12C / 24T |
 | macOS GPU | AMD Radeon RX 580 8 GB |
-| Windows-only GPU | NVIDIA GeForce RTX 3080, disabled in macOS by PCI path |
-| Wi-Fi / Bluetooth | Intel Wi-Fi 6 AX200, PCI ID `8086:2723` |
-| Audio | Realtek ALC1220, AppleALC layout 5 |
-| Ethernet hardware | Realtek RTL8125 2.5 GbE and Intel I211 |
-| Storage | WD_BLACK SN850X 1 TB and Samsung 970 EVO Plus 500 GB |
+| Windows GPU | NVIDIA GeForce RTX 3080 |
+| Wi-Fi / Bluetooth | Intel Wi-Fi 6 AX200 |
+| Audio | Realtek ALC1220 |
+| Ethernet | Realtek RTL8125 2.5 GbE; Intel I211 also present |
+| Storage | WD_BLACK SN850X 1 TB + Samsung 970 EVO Plus 500 GB |
+| Case / front I/O | Cooler Master H500M, 4× front USB-A 3.x + front USB-C |
 | SMBIOS | MacPro7,1 |
-| macOS | Tahoe 26.x; working snapshot tested on build `25F80` |
 
-The AX200 ACPI path used by this exact board is:
-
-```text
-PciRoot(0x0)/Pci(0x1,0x2)/Pci(0x0,0x0)/Pci(0x3,0x0)/Pci(0x0,0x0)
-```
-
-Do not assume this path is identical on another board or BIOS configuration. Verify it with `gfxutil`.
-
-## Status
+## Feature status
 
 | Feature | Status | Notes |
 |---|---|---|
-| macOS boot | Working | OpenCore configuration generated and refined with OpCore-Simplify |
-| Radeon RX 580 | Working | Primary macOS GPU |
-| RTX 3080 retained in the PC | Working | Disabled only in macOS with `disable-gpu` at its PCI path |
-| Intel AX200 Wi-Fi | Working | Native macOS Wi-Fi menu via AirportItlwm + Modern Wireless root patch |
-| Intel AX200 Bluetooth | Working | IntelBluetoothFirmware, IntelBTPatcher and BlueToolFixup |
-| ALC1220 audio | Working | AppleALC layout 5; no VoodooHDA |
-| USB | Working | USBToolBox + custom UTBMap; UTBDefault is not used |
-| NVMe | Working | Includes NVMeFix |
-| AirDrop / AWDL | Not working on the tested Tahoe build | `awdl0` is not created, so peer discovery fails even though Wi-Fi and Bluetooth work |
-| Personal Hotspot / Continuity features requiring AWDL | Not expected to work | Same missing-AWDL limitation |
+| macOS boot | Working | Stable on Tahoe 26.6.1 / `25G76` |
+| CPU topology | Working | 12 physical / 24 logical threads; AVX/AVX2/FMA exposed |
+| RX 580 acceleration | Working | 8 GB VRAM, Metal and AMD framebuffer/accelerator stack confirmed |
+| RTX 3080 retained | Working | Disabled only in macOS with `disable-gpu` |
+| Intel AX200 Wi-Fi | Working | Native macOS Wi-Fi UI via AirportItlwm + OCLP Modern Wireless root patch |
+| Bluetooth | Working | IntelBluetoothFirmware + IntelBTPatcher + BlueToolFixup |
+| Ethernet | Working | `RTL812xLucy.kext`; 1 Gbps confirmed |
+| ALC1220 audio | Working | AppleALC layout 5 + OCLP Modern Audio root patch |
+| USB-A | Working | Custom USBToolBox map |
+| H500M front USB-C | Working | iPhone enumeration, pairing and libimobiledevice communication confirmed |
+| Rear USB-C | Working | Detected during physical mapping |
+| iCloud / iMessage / FaceTime | Working | APNs client identity and IDS registration confirmed |
+| Continuity Camera over USB | Working | iPhone works as a QuickTime camera over cable |
+| Wireless Continuity Camera | Not working | Current Intel Wi-Fi stack does not create `awdl0` |
+| AirDrop / AWDL-dependent features | Not working | Same missing-AWDL limitation |
+| iPhone Mirroring | Not expected | Apple requires Apple silicon or an Intel Mac with T2; model spoofing cannot provide T2 hardware/attestation |
+| iOS 27 extra DeviceSupport package | Pending Apple availability | USB pairing works, but MobileDeviceUpdater currently finds no matching `DEVICESUPPORT` product |
 
-## Important: generate your own Apple identifiers
+## Important SMBIOS setting
 
-Both supplied configurations are deliberately sanitized. Before booting, open `EFI/OC/config.plist` and replace these `PlatformInfo -> Generic` placeholders:
+The working configuration uses:
 
-| Key | Supplied value | Required action |
-|---|---|---|
-| `SystemSerialNumber` | `CHANGEME` | Generate a unique MacPro7,1 serial |
-| `MLB` | `CHANGEME` | Generate a matching board serial |
-| `SystemUUID` | `00000000-0000-0000-0000-000000000000` | Generate a unique UUID |
-| `ROM` | Empty | Usually use the MAC address of the built-in primary network interface, without separators |
+```text
+PlatformInfo -> UpdateSMBIOSMode = Create
+```
 
-[GenSMBIOS](https://github.com/corpnewt/GenSMBIOS) can generate the MacPro7,1 values. Never reuse identifiers from another public EFI.
+`Custom` caused the underlying Gigabyte firmware identity to appear at runtime on this machine. Both the primary and HeliPort fallback repository configs use `Create`.
 
-Repeat the same values in `config-heliport-working.plist` if you want that file to be a ready-to-use fallback.
+Do not change a working machine's SMBIOS/ROM/UUID or reset NVRAM as a generic troubleshooting step.
 
-## BIOS and OpenCore notes
+## Generate your own Apple identifiers
 
-This snapshot was built for the working X570 firmware setup, including:
+The public repository contains placeholders only. Before booting, replace these values under `PlatformInfo -> Generic` in `EFI/OC/config.plist`:
 
-- UEFI boot with CSM disabled
+| Key | Repository value |
+|---|---|
+| `SystemSerialNumber` | `CHANGEME` |
+| `MLB` | `CHANGEME` |
+| `SystemUUID` | `00000000-0000-0000-0000-000000000000` |
+| `ROM` | Empty |
+
+Use one internally consistent identity set and never reuse identifiers from another public EFI. If you want the HeliPort fallback to be immediately usable, place the same identity set in `config-heliport-working.plist`.
+
+## BIOS / OpenCore notes
+
+Tested setup:
+
+- UEFI boot / CSM disabled
 - Secure Boot disabled
 - Above 4G Decoding enabled
-- Resizable BAR enabled; OpenCore uses `ResizeAppleGpuBars = 0` and `ResizeGpuBars = -1`
-- `SetupVirtualMap = true` for this board/firmware combination
-- IOMMU may remain enabled because `DisableIoMapper = true`
+- Resizable BAR enabled
+- `ResizeAppleGpuBars = 0`
+- `ResizeGpuBars = -1`
+- `SetupVirtualMap = true`
+- `DisableIoMapper = true`
+- `XhciPortLimit = false`
+- `SecureBootModel = Disabled` for the root-patched Tahoe Wi-Fi/audio setup
+- `csr-active-config = 03080000`
 
-BIOS updates can change PCI paths or firmware behaviour. Recheck the Wi-Fi and RTX 3080 paths after an update.
+BIOS updates can change PCI paths. Recheck hardware paths after firmware changes.
 
-## Native Intel Wi-Fi installation on Tahoe
+## Tahoe Intel Wi-Fi / OCLP root patches
 
-The default configuration already contains and enables:
+The primary config uses the native-Wi-Fi path with:
 
 - Lilu 1.7.3
-- AMFIPass 1.4.1 with the `-amfipassbeta` boot argument
+- AMFIPass 1.4.1 and `-amfipassbeta`
 - IOSkywalkFamily 1.0
 - IO80211FamilyLegacy 12.0
-- AirportItlwm 2.3.0 Ventura build
-- the required IOSkywalkFamily block entry
-- the AX200 Broadcom-compatible device-property injection
+- AirportItlwm 2.3.0
+- IntelBluetoothFirmware / IntelBTPatcher 2.5.1
+- BlueToolFixup 2.7.3
+- required IOSkywalkFamily block entry and AX200 device-property injection
 
-It also sets `csr-active-config` to `03080000` and `SecureBootModel` to `Disabled`, as required by this root-patched setup.
+After a macOS update, use OCLP only for **Post-Install Root Patch**. The tested 26.6.1 installation applies:
 
-After booting this EFI:
+- **Networking: Modern Wireless**
+- **Miscellaneous: Modern Audio**
 
-1. Install the [OCLP 3.0.0 Nightly amfipassbeta Tahoe build](https://github.com/kgp-macPro/OCLP-lzhoang2801-amfipassbeta/releases).
-2. Open **Post-Install Root Patch**.
-3. Confirm it detects **Networking: Modern Wireless**.
-4. Start root patching and reboot when it finishes.
-5. Reset NVRAM once if the native Wi-Fi interface does not appear on the first boot.
+Do **not** use OCLP's **Build and Install OpenCore** function with this custom EFI.
 
-A manually installed KDK is not always required for the Modern Wireless patch. If OCLP requests one, install the KDK matching the exact value returned by `sw_vers -buildVersion`; do not substitute a near-matching build.
+## Ethernet
 
-Root patches normally need to be reapplied after a macOS update. Keep another way to reach the internet available during updates.
+Primary config:
+
+```text
+RTL812xLucy.kext 1.1.1 = enabled
+LucyRTL8125Ethernet.kext 1.2.3 = disabled
+```
+
+The configured `AppleEthernetRL` block is retained for the Tahoe/legacy-IOSkywalk setup. A previous 100 Mbps negotiation issue was a bad cable, not the driver; a replacement cable negotiates at 1 Gbps full duplex.
+
+## USB map
+
+The final USB map was rebuilt with USBToolBox in Windows so ports absent from the old macOS map could be discovered independently.
+
+The current `UTBMap.kext` contains three controller personalities and includes the H500M front USB-C USB2 path that was verified with an iPhone in macOS, plus mapped rear/front Type-A, SuperSpeed and internal-device paths.
+
+`UTBDefault.kext` and `USBInjectAll.kext` are not used. Keep `XhciPortLimit = false`.
 
 ## HeliPort fallback
 
-`EFI/OC/config-heliport-working.plist` is the known-good `itlwm` fallback. It keeps native Wi-Fi patch components disabled and does not require the Modern Wireless root patch.
+`EFI/OC/config-heliport-working.plist` is retained as an `itlwm` + HeliPort fallback. Do not enable `AirportItlwm.kext` and `itlwm.kext` simultaneously.
 
-To use it:
+## Kext versions in this snapshot
 
-1. Preserve the current native `config.plist` as a backup.
-2. Copy `config-heliport-working.plist` to `config.plist`.
-3. Install [HeliPort](https://github.com/OpenIntelWireless/HeliPort/releases).
-4. Reset NVRAM and boot.
+| Kext | Version / state |
+|---|---|
+| Lilu | 1.7.3 |
+| WhateverGreen | 1.7.1 |
+| VirtualSMC | 1.3.8 |
+| AppleALC | 1.9.8 |
+| AMFIPass | 1.4.1 |
+| RestrictEvents | 1.1.7 |
+| USBToolBox | 1.2.0 |
+| UTBMap | custom 1.1 |
+| NVMeFix | 1.1.4 |
+| AirportItlwm | 2.3.0 |
+| itlwm | 2.3.0; disabled in primary config |
+| IntelBluetoothFirmware / IntelBTPatcher | 2.5.1 |
+| BlueToolFixup | 2.7.3 |
+| RTL812xLucy | 1.1.1; enabled |
+| LucyRTL8125Ethernet | 1.2.3; disabled in primary config |
 
-Do not enable `AirportItlwm.kext` and `itlwm.kext` simultaneously.
+## Privacy
 
-## EFI contents
-
-- ACPI: SSDT-EC, SSDT-USB-Reset and SSDT-USBX
-- Audio: AppleALC
-- Bluetooth: BlueToolFixup, IntelBluetoothFirmware and IntelBTPatcher
-- GPU patching: WhateverGreen
-- Storage: CtlnaAHCIPort and NVMeFix
-- USB: USBToolBox and UTBMap
-- AMD stability: AppleMCEReporterDisabler and the configured AMD kernel patches
-- Wi-Fi: native AirportItlwm stack plus disabled `itlwm` fallback
+Do not commit real Apple identifiers, network-derived ROM values, iPhone identifiers, APNs certificates/tokens/private keys, or diagnostic dumps that contain them.
 
 ## Credits
 
-- [Dortania OpenCore Install Guide](https://dortania.github.io/OpenCore-Install-Guide/)
-- [Acidanthera OpenCorePkg](https://github.com/acidanthera/OpenCorePkg) and its kext projects
-- [OpCore-Simplify](https://github.com/lzhoang2801/OpCore-Simplify)
-- [OpenIntelWireless itlwm / AirportItlwm](https://github.com/OpenIntelWireless/itlwm)
-- [OpenIntelWireless IntelBluetoothFirmware](https://github.com/OpenIntelWireless/IntelBluetoothFirmware)
-- [USBToolBox](https://github.com/USBToolBox/kext)
-- [OCLP Tahoe amfipassbeta fork](https://github.com/kgp-macPro/OCLP-lzhoang2801-amfipassbeta)
+- Dortania OpenCore Install Guide
+- Acidanthera OpenCorePkg and kext projects
+- OpCore-Simplify
+- OpenIntelWireless itlwm / AirportItlwm
+- OpenIntelWireless IntelBluetoothFirmware
+- USBToolBox
+- OpenCore Legacy Patcher
 
 ## Disclaimer
 
-Hackintosh configurations are experimental and hardware-specific. This repository is provided as-is. Back up the working EFI and important data before changing firmware, OpenCore, kexts, macOS, root patches or SMBIOS values.
+Hackintosh configurations are experimental and hardware-specific. Keep backups and make isolated changes. Do not treat this EFI as universal for other X570 boards, BIOS revisions or PCI layouts.

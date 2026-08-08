@@ -1,0 +1,5 @@
+bac2464005fd59ee246b2a6d7611c3236610980583920ac770fd17fcfacba18b  EFI/OC/config.plist
+762844daec80b1fd1976d67c4a259c6799e61dbae54394390df7a717d31b5b62  EFI/OC/config-heliport-working.plist
+efbc5d29bd42fb48a11a4f55b0825d875348021ed8f03eb9c9f1406eeea1d020  EFI/OC/Kexts/UTBMap.kext/Contents/Info.plist
+d32e5668c2993ac625185437244cf3dcaa21e9be1ec7052394738ae2a88014a5  EFI/OC/Kexts/RTL812xLucy.kext/Contents/Info.plist
+ad6ca1836e07d9f689ffd1904d26fe7646c8a7075076005d26e7d58ef79435d5  EFI/OC/Kexts/RTL812xLucy.kext/Contents/MacOS/RTL812xLucy
